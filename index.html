@@ -112,25 +112,18 @@
     color: rgba(255,255,255,0.35);
     margin-bottom: 16px;
   }
-  .chart-scroll {
-    overflow-x: auto;
-    padding-top: 40px;
-    margin-top: -40px;
-  }
   .chart {
     display: flex;
     gap: 3px;
     align-items: flex-end;
     min-height: 60px;
     padding-bottom: 20px;
-    position: relative;
-    overflow: visible;
+    overflow-x: auto;
   }
   .day {
     flex: 1;
     min-width: 12px;
     border-radius: 4px 4px 0 0;
-    position: relative;
     cursor: pointer;
     transition: opacity 0.2s;
     height: var(--h, 20px);
@@ -144,22 +137,6 @@
     border-radius: 4px;
     cursor: default;
   }
-  .day .tooltip {
-    display: none;
-    position: absolute;
-    bottom: calc(100% + 8px);
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(0,0,0,0.8);
-    color: #fff;
-    padding: 6px 10px;
-    border-radius: 8px;
-    font-size: 12px;
-    white-space: nowrap;
-    z-index: 10;
-    backdrop-filter: blur(10px);
-  }
-  .day:hover .tooltip { display: block; }
   .empty-state {
     text-align: center;
     color: rgba(255,255,255,0.25);
@@ -258,7 +235,7 @@
   <button class="save-btn" id="saveBtn">✎ сохранить</button>
 
   <div class="section-title">последние 30 дней</div>
-  <div class="chart-scroll"><div class="chart" id="chart"></div></div>
+  <div class="chart" id="chart"></div>
   <div id="emptyState" class="empty-state">тут пока пусто. отметь своё настроение!</div>
 
   <div class="stats" id="stats" style="display:none">
@@ -362,11 +339,8 @@
         div.style.setProperty('--h', (mood * 10 + 10) + 'px');
         div.style.background = MOOD_COLORS[mood];
 
-        const tip = document.createElement('div');
-        tip.className = 'tooltip';
         const dayLabel = new Date(date).toLocaleDateString('ru-RU', { weekday: 'short', day: 'numeric', month: 'short' });
-        tip.textContent = `${dayLabel} — ${MOOD_LABELS[mood]}${entry.note ? ': ' + entry.note : ''}`;
-        div.appendChild(tip);
+        div.title = `${dayLabel} — ${MOOD_LABELS[mood]}${entry.note ? ': ' + entry.note : ''}`;
       } else {
         div.classList.add('empty');
       }
