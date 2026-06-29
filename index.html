@@ -410,59 +410,6 @@
     font-size: 13px;
     color: rgba(80, 60, 45, 0.45);
   }
-  .peek-row {
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 1px solid rgba(200, 160, 130, 0.12);
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    align-items: center;
-  }
-  .peek-myid {
-    font-size: 12px;
-    color: rgba(80, 60, 45, 0.35);
-  }
-  .peek-myid span {
-    font-family: monospace;
-    color: rgba(80, 60, 45, 0.55);
-  }
-  .peek-form {
-    display: flex;
-    gap: 6px;
-    flex: 1;
-    min-width: 160px;
-  }
-  .peek-input {
-    flex: 1;
-    background: rgba(240, 215, 190, 0.2);
-    border: 1px solid rgba(200, 160, 130, 0.2);
-    border-radius: 10px;
-    padding: 8px 12px;
-    font-size: 13px;
-    color: #3d2c2c;
-    font-family: monospace;
-    outline: none;
-    transition: border-color 0.2s;
-  }
-  .peek-input:focus { border-color: rgba(180, 140, 110, 0.4); }
-  .peek-btn {
-    padding: 8px 14px;
-    border: none;
-    border-radius: 10px;
-    background: #3d2c2c;
-    color: #faf0e8;
-    font-size: 16px;
-    cursor: pointer;
-    transition: background 0.15s;
-  }
-  .peek-btn:hover { background: #4d3838; }
-  .peek-hint {
-    font-size: 12px;
-    color: rgba(180, 140, 110, 0.6);
-    width: 100%;
-    text-align: center;
-  }
 </style>
 </head>
 <body>
@@ -542,40 +489,15 @@
     <span class="reminder-label">напоминать, если не отмечал</span>
   </div>
 
-  <div class="peek-row">
-    <div class="peek-myid">мой id: <span id="myId">...</span></div>
-    <div class="peek-form">
-      <input class="peek-input" id="peekInput" placeholder="чужой id">
-      <button class="peek-btn" id="peekBtn">👀</button>
-    </div>
-    <div class="peek-hint" id="peekHint"></div>
-  </div>
 </div>
 
 <div class="saved-toast" id="toast">готово ✌️</div>
 
-<script type="module">
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js';
-import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js';
-import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, getDocs, query, orderBy } from 'https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js';
-
-const firebaseConfig = {
-  apiKey: "AIzaSyCOLukfoheoXyGMXC2-aGbhNZX491-maI4",
-  authDomain: "mood-tracker-c18f6.firebaseapp.com",
-  projectId: "mood-tracker-c18f6",
-  storageBucket: "mood-tracker-c18f6.firebasestorage.app",
-  messagingSenderId: "632017021291",
-  appId: "1:632017021291:web:835c1fe076da9ac6e9442e",
-  measurementId: "G-FFHWPY2F9T"
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-
+<script>
 const MOOD_COLORS = { 1: '#e07060', 2: '#e8945a', 3: '#d4a84b', 4: '#7fb085', 5: '#b58ace' };
 const MOOD_LABELS = { 1: 'ужасно', 2: 'плохо', 3: 'нормально', 4: 'хорошо', 5: 'отлично' };
 const MOOD_EMOJIS = { 1: '😡', 2: '😢', 3: '😐', 4: '😊', 5: '🤩' };
+const STORAGE_KEY = 'moodtracker';
 const TAGS = ['работа', 'сон', 'еда', 'спорт', 'погода', 'люди', 'здоровье', 'творчество', 'финансы'];
 
 const QUOTES = [
@@ -598,9 +520,14 @@ const QUOTES = [
 
 let selectedMood = null;
 let editingDate = null;
-let currentUserUid = null;
-let viewingUid = null;
-let cachedData = {};
+
+function loadData() {
+  return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+}
+
+function saveData(data) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
 
 document.querySelectorAll('.mood-btn').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -612,35 +539,11 @@ document.querySelectorAll('.mood-btn').forEach(btn => {
 
 document.getElementById('saveBtn').addEventListener('click', saveMood);
 document.getElementById('cancelBtn').addEventListener('click', cancelEdit);
-document.getElementById('peekBtn').addEventListener('click', peekUser);
 
 renderTags();
 showDailyQuote();
 setupReminder();
-
-onAuthStateChanged(auth, async (user) => {
-  if (user) {
-    currentUserUid = user.uid;
-    viewingUid = currentUserUid;
-    document.getElementById('myId').textContent = user.uid.slice(0, 8) + '…';
-    await loadData();
-  } else {
-    await signInAnonymously(auth);
-  }
-});
-
-async function loadData() {
-  if (!viewingUid) return;
-  const snap = await getDocs(collection(db, 'users', viewingUid, 'entries'));
-  cachedData = {};
-  snap.forEach(d => { cachedData[d.id] = d.data(); });
-  document.getElementById('peekHint').textContent = viewingUid === currentUserUid ? '' : '👀 смотришь чужие записи';
-  renderAll();
-}
-
-function getDataRef(date) {
-  return doc(db, 'users', viewingUid, 'entries', date);
-}
+renderAll();
 
 function renderTags() {
   const row = document.getElementById('tagRow');
@@ -665,21 +568,22 @@ function setSelectedTags(tags) {
   });
 }
 
-async function saveMood() {
-  if (!selectedMood || !viewingUid) return;
-  if (viewingUid !== currentUserUid) { showToast('нельзя редактировать чужие записи'); return; }
+function saveMood() {
+  if (!selectedMood) return;
   const note = document.getElementById('note').value.trim();
   const tags = getSelectedTags();
   const date = editingDate || new Date().toISOString().slice(0, 10);
-  await setDoc(getDataRef(date), { mood: selectedMood, note, tags, createdAt: new Date() });
+  const data = loadData();
+  data[date] = { mood: selectedMood, note, tags };
+  saveData(data);
   showToast();
   cancelEdit();
-  await loadData();
+  renderAll();
 }
 
 function editEntry(date) {
-  if (viewingUid !== currentUserUid) return;
-  const entry = cachedData[date];
+  const data = loadData();
+  const entry = data[date];
   if (!entry) return;
   editingDate = date;
   document.getElementById('editHint').textContent = 'редактируем ' + new Date(date + 'T12:00:00').toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
@@ -706,10 +610,11 @@ function cancelEdit() {
   selectedMood = null;
 }
 
-async function deleteEntry(date) {
-  if (viewingUid !== currentUserUid) return;
-  await deleteDoc(getDataRef(date));
-  await loadData();
+function deleteEntry(date) {
+  const data = loadData();
+  delete data[date];
+  saveData(data);
+  renderAll();
 }
 
 function showToast(msg) {
@@ -720,12 +625,13 @@ function showToast(msg) {
 }
 
 function renderAll() {
-  renderChart();
-  renderStats();
-  renderHistory();
+  const data = loadData();
+  renderChart(data);
+  renderStats(data);
+  renderHistory(data);
 }
 
-function renderChart() {
+function renderChart(data) {
   const chart = document.getElementById('chart');
   const empty = document.getElementById('emptyState');
   chart.innerHTML = '';
@@ -741,14 +647,14 @@ function renderChart() {
   for (const date of days) {
     const div = document.createElement('div');
     div.className = 'day';
-    const entry = cachedData[date];
+    const entry = data[date];
     if (entry) {
       hasData = true;
       div.style.setProperty('--h', (entry.mood * 10 + 10) + 'px');
       div.style.background = MOOD_COLORS[entry.mood];
       div.title = new Date(date + 'T12:00:00').toLocaleDateString('ru-RU', { weekday: 'short', day: 'numeric', month: 'short' })
         + ' — ' + MOOD_LABELS[entry.mood];
-      if (viewingUid === currentUserUid) div.addEventListener('click', () => editEntry(date));
+      div.addEventListener('click', () => editEntry(date));
     } else {
       div.classList.add('empty');
     }
@@ -757,8 +663,8 @@ function renderChart() {
   empty.style.display = hasData ? 'none' : 'block';
 }
 
-function renderStats() {
-  const entries = Object.entries(cachedData).sort((a, b) => a[0].localeCompare(b[0]));
+function renderStats(data) {
+  const entries = Object.entries(data).sort((a, b) => a[0].localeCompare(b[0]));
   const stats = document.getElementById('stats');
   if (entries.length === 0) { stats.style.display = 'none'; return; }
   stats.style.display = 'block';
@@ -791,7 +697,7 @@ function renderStats() {
   for (let i = 0; ; i++) {
     const d = new Date();
     d.setDate(d.getDate() - i);
-    if (cachedData[d.toISOString().slice(0, 10)]) streak++; else break;
+    if (data[d.toISOString().slice(0, 10)]) streak++; else break;
   }
   document.getElementById('streak').textContent = streak;
 
@@ -834,9 +740,11 @@ function renderStats() {
     const weekStart = new Date(now);
     weekStart.setDate(weekStart.getDate() - weekStart.getDay() - (7 * (7 - w)) + 1);
     const scores = [];
-    for (let d = new Date(weekStart), end = new Date(weekStart); d <= new Date(end.setDate(end.getDate() + 6)); d.setDate(d.getDate() + 1)) {
-      const key = d.toISOString().slice(0, 10);
-      if (cachedData[key]) scores.push(cachedData[key].mood);
+    for (let d = 0; d < 7; d++) {
+      const day = new Date(weekStart);
+      day.setDate(day.getDate() + d);
+      const key = day.toISOString().slice(0, 10);
+      if (data[key]) scores.push(data[key].mood);
     }
     const wrap = document.createElement('div');
     wrap.className = 'week-bar-wrap';
@@ -860,8 +768,8 @@ function renderStats() {
   }
 }
 
-function renderHistory() {
-  const entries = Object.entries(cachedData).sort((a, b) => b[0].localeCompare(a[0])).slice(0, 20);
+function renderHistory(data) {
+  const entries = Object.entries(data).sort((a, b) => b[0].localeCompare(a[0])).slice(0, 20);
   const history = document.getElementById('history');
   const container = document.getElementById('entries');
   if (entries.length === 0) { history.style.display = 'none'; return; }
@@ -908,29 +816,19 @@ function renderHistory() {
     div.appendChild(labelDiv);
     div.appendChild(col);
 
-    if (viewingUid === currentUserUid) {
-      const editBtn = document.createElement('button');
-      editBtn.className = 'entry-edit';
-      editBtn.textContent = '✎';
-      editBtn.addEventListener('click', () => editEntry(date));
-      const delBtn = document.createElement('button');
-      delBtn.className = 'entry-del';
-      delBtn.textContent = '✕';
-      delBtn.addEventListener('click', (e) => { e.stopPropagation(); deleteEntry(date); });
-      div.appendChild(editBtn);
-      div.appendChild(delBtn);
-    }
+    const editBtn = document.createElement('button');
+    editBtn.className = 'entry-edit';
+    editBtn.textContent = '✎';
+    editBtn.addEventListener('click', () => editEntry(date));
+    const delBtn = document.createElement('button');
+    delBtn.className = 'entry-del';
+    delBtn.textContent = '✕';
+    delBtn.addEventListener('click', (e) => { e.stopPropagation(); deleteEntry(date); });
+    div.appendChild(editBtn);
+    div.appendChild(delBtn);
 
     container.appendChild(div);
   }
-}
-
-async function peekUser() {
-  const input = document.getElementById('peekInput').value.trim();
-  if (!input) return;
-  viewingUid = input;
-  document.getElementById('peekInput').value = '';
-  await loadData();
 }
 
 function showDailyQuote() {
@@ -963,7 +861,8 @@ function checkReminder() {
   if (localStorage.getItem('reminder') !== 'on') return;
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
   const today = new Date().toISOString().slice(0, 10);
-  if (!cachedData[today]) {
+  const data = loadData();
+  if (!data[today]) {
     new Notification('как дела?', { body: 'ты ещё не отмечал настроение сегодня', silent: true });
   }
 }
