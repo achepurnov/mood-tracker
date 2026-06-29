@@ -112,6 +112,11 @@
     color: rgba(255,255,255,0.35);
     margin-bottom: 16px;
   }
+  .chart-scroll {
+    overflow-x: auto;
+    padding-top: 40px;
+    margin-top: -40px;
+  }
   .chart {
     display: flex;
     gap: 3px;
@@ -119,7 +124,7 @@
     min-height: 60px;
     padding-bottom: 20px;
     position: relative;
-    overflow-x: auto;
+    overflow: visible;
   }
   .day {
     flex: 1;
@@ -253,7 +258,7 @@
   <button class="save-btn" id="saveBtn">✎ сохранить</button>
 
   <div class="section-title">последние 30 дней</div>
-  <div class="chart" id="chart"></div>
+  <div class="chart-scroll"><div class="chart" id="chart"></div></div>
   <div id="emptyState" class="empty-state">тут пока пусто. отметь своё настроение!</div>
 
   <div class="stats" id="stats" style="display:none">
