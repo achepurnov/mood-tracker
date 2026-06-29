@@ -35,8 +35,23 @@
   .subtitle {
     font-size: 14px;
     color: rgba(255,255,255,0.5);
-    margin-bottom: 32px;
+    margin-bottom: 8px;
   }
+  .quote {
+    font-size: 15px;
+    font-style: italic;
+    color: rgba(255,255,255,0.55);
+    margin-bottom: 28px;
+    padding: 12px 16px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 12px;
+    border-left: 3px solid rgba(255,255,255,0.15);
+    line-height: 1.5;
+    min-height: 22px;
+    transition: opacity 0.3s;
+  }
+  .quote::before { content: '\201C'; }
+  .quote::after { content: '\201D'; }
   .moods {
     display: flex;
     justify-content: space-between;
@@ -223,6 +238,8 @@
   <h1>mood tracker</h1>
   <p class="subtitle">как прошёл твой день?</p>
 
+  <div class="quote" id="quote"></div>
+
   <div class="moods">
     <button class="mood-btn" data-mood="1" title="ужасно">😡</button>
     <button class="mood-btn" data-mood="2" title="плохо">😢</button>
@@ -277,6 +294,45 @@
   const MOOD_COLORS = { 1: '#ef4444', 2: '#f97316', 3: '#eab308', 4: '#22c55e', 5: '#8b5cf6' };
   const MOOD_LABELS = { 1: 'ужасно', 2: 'плохо', 3: 'нормально', 4: 'хорошо', 5: 'отлично' };
   const STORAGE_KEY = 'moodtracker';
+
+  const QUOTES = [
+    'каждый день — это новая возможность',
+    'даже маленький шаг — это прогресс',
+    'твоё настроение — твой выбор',
+    'будь добрее к себе',
+    'ты уже справляешься лучше, чем думаешь',
+    'сегодня будет хороший день',
+    'сделай что-то, что сделает тебя счастливее',
+    'не забывай дышать',
+    'ты важен',
+    'даже в плохой день есть что-то хорошее',
+    'всё будет, но не сразу',
+    'главное — не останавливаться',
+    'позволь себе чувствовать',
+    'ты сильнее, чем кажется',
+    'каждая туча — с серебряной подкладкой',
+    'не сравнивай себя с другими',
+    'сегодня — отличный день, чтобы начать',
+    'будь собой',
+    'всё, что тебе нужно, уже есть внутри',
+    'ты заслуживаешь счастья',
+    'это тоже пройдёт',
+    'держи голову выше',
+    'маленькие победы — тоже победы',
+    'никогда не поздно',
+    'ты не один',
+    'сделай глубокий вдох',
+    'улыбнись, даже если не хочется',
+    'ты справишься',
+    'будь здесь и сейчас',
+    'всему своё время',
+  ];
+
+  function getDailyQuote() {
+    const today = new Date().toISOString().slice(0, 10);
+    const dayNum = parseInt(today.replace(/-/g, ''), 10);
+    return QUOTES[dayNum % QUOTES.length];
+  }
 
   let selectedMood = null;
 
@@ -435,6 +491,11 @@
     }
   }
 
+  function showDailyQuote() {
+    document.getElementById('quote').textContent = getDailyQuote();
+  }
+
+  showDailyQuote();
   renderChart();
   renderStats();
 </script>
