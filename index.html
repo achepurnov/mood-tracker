@@ -102,8 +102,38 @@
   }
   textarea:focus { border-color: rgba(180, 140, 110, 0.4); }
   textarea::placeholder { color: rgba(100, 75, 60, 0.3); }
+  .tag-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+  .tag-btn {
+    font-size: 11px;
+    padding: 5px 11px;
+    border-radius: 20px;
+    border: 1px solid rgba(180, 140, 110, 0.2);
+    background: rgba(240, 215, 190, 0.15);
+    color: rgba(80, 60, 45, 0.6);
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+  .tag-btn:hover {
+    background: rgba(240, 215, 190, 0.35);
+  }
+  .tag-btn.active {
+    background: #3d2c2c;
+    color: #faf0e8;
+    border-color: #3d2c2c;
+  }
+  .save-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
   .save-btn {
-    width: 100%;
+    flex: 1;
     padding: 12px;
     border: none;
     border-radius: 14px;
@@ -113,10 +143,27 @@
     background: #3d2c2c;
     color: #faf0e8;
     transition: all 0.2s;
-    margin-bottom: 32px;
   }
   .save-btn:hover { background: #4d3838; transform: translateY(-1px); }
   .save-btn:active { transform: scale(0.97); }
+  .cancel-btn {
+    padding: 12px 18px;
+    border: 1px solid rgba(180, 140, 110, 0.25);
+    border-radius: 14px;
+    font-size: 13px;
+    cursor: pointer;
+    background: transparent;
+    color: rgba(80, 60, 45, 0.5);
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+  .cancel-btn:hover { background: rgba(180, 140, 110, 0.1); color: #3d2c2c; }
+  .edit-hint {
+    font-size: 12px;
+    color: rgba(80, 60, 45, 0.4);
+    margin-bottom: 24px;
+    text-align: center;
+  }
   .section-title {
     font-size: 11px;
     font-weight: 600;
@@ -227,48 +274,142 @@
   .dist-emoji {
     font-size: 15px;
   }
+  .week-chart {
+    display: flex;
+    gap: 4px;
+    align-items: flex-end;
+    min-height: 48px;
+    padding-top: 4px;
+  }
+  .week-bar-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+  }
+  .week-bar {
+    width: 100%;
+    border-radius: 4px 4px 0 0;
+    min-height: 4px;
+    transition: height 0.4s ease;
+  }
+  .week-label {
+    font-size: 9px;
+    color: rgba(80, 60, 45, 0.35);
+    white-space: nowrap;
+  }
   .history { margin-top: 32px; }
   .entry {
     display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 8px 0;
-    border-bottom: 1px solid rgba(200, 160, 130, 0.15);
+    align-items: flex-start;
+    gap: 8px;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(200, 160, 130, 0.12);
   }
   .entry:last-child { border-bottom: none; }
   .entry-date {
     font-size: 12px;
     color: rgba(80, 60, 45, 0.45);
-    min-width: 38px;
+    min-width: 36px;
+    padding-top: 2px;
   }
   .entry-mood {
-    font-size: 17px;
-    min-width: 26px;
+    font-size: 16px;
+    min-width: 24px;
     text-align: center;
   }
   .entry-label {
     font-size: 11px;
     color: rgba(80, 60, 45, 0.45);
-    min-width: 52px;
+    min-width: 48px;
+    padding-top: 3px;
+  }
+  .entry-col {
+    flex: 1;
+    min-width: 0;
   }
   .entry-note {
-    flex: 1;
     font-size: 13px;
     color: rgba(80, 60, 45, 0.55);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
+  .entry-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 4px;
+  }
+  .entry-tag {
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 10px;
+    background: rgba(200, 160, 130, 0.15);
+    color: rgba(80, 60, 45, 0.5);
+  }
+  .entry-edit {
+    background: none;
+    border: none;
+    color: rgba(80, 60, 45, 0.2);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 4px;
+    transition: color 0.15s;
+  }
+  .entry-edit:hover { color: #7fb085; }
   .entry-del {
     background: none;
     border: none;
     color: rgba(80, 60, 45, 0.2);
     cursor: pointer;
-    font-size: 15px;
+    font-size: 14px;
     padding: 4px;
     transition: color 0.15s;
   }
   .entry-del:hover { color: #c05545; }
+  .reminder-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 28px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(200, 160, 130, 0.12);
+  }
+  .reminder-toggle {
+    position: relative;
+    display: inline-block;
+    width: 38px;
+    height: 22px;
+    flex-shrink: 0;
+  }
+  .reminder-toggle input { opacity: 0; width: 0; height: 0; }
+  .reminder-slider {
+    position: absolute;
+    cursor: pointer;
+    inset: 0;
+    background: rgba(200, 160, 130, 0.25);
+    border-radius: 22px;
+    transition: background 0.2s;
+  }
+  .reminder-slider::before {
+    content: '';
+    position: absolute;
+    height: 16px;
+    width: 16px;
+    left: 3px;
+    bottom: 3px;
+    background: #faf0e8;
+    border-radius: 50%;
+    transition: transform 0.2s;
+  }
+  .reminder-toggle input:checked + .reminder-slider { background: #7fb085; }
+  .reminder-toggle input:checked + .reminder-slider::before { transform: translateX(16px); }
+  .reminder-label {
+    font-size: 13px;
+    color: rgba(80, 60, 45, 0.45);
+  }
 </style>
 </head>
 <body>
@@ -287,8 +428,14 @@
     <button class="mood-btn" data-mood="5" title="отлично">🤩</button>
   </div>
 
+  <div class="tag-row" id="tagRow"></div>
+
   <textarea id="note" placeholder="пара слов о дне..."></textarea>
-  <button class="save-btn" id="saveBtn">✌️ записать</button>
+  <div class="save-row">
+    <button class="save-btn" id="saveBtn">✌️ записать</button>
+    <button class="cancel-btn" id="cancelBtn" style="display:none">отмена</button>
+  </div>
+  <div class="edit-hint" id="editHint" style="display:none"></div>
 
   <div class="section-title">последние 30 дней</div>
   <div class="chart" id="chart"></div>
@@ -324,63 +471,55 @@
     </div>
     <div class="dist-title">распределение</div>
     <div class="distribution" id="distribution"></div>
+
+    <div class="section-title" style="margin-top:20px">по неделям</div>
+    <div class="week-chart" id="weekChart"></div>
   </div>
 
   <div class="history" id="history" style="display:none">
     <div class="section-title">последние записи</div>
     <div class="entries" id="entries"></div>
   </div>
+
+  <div class="reminder-row">
+    <label class="reminder-toggle">
+      <input type="checkbox" id="reminderCheck">
+      <span class="reminder-slider"></span>
+    </label>
+    <span class="reminder-label">напоминать, если не отмечал</span>
+  </div>
 </div>
 
 <div class="saved-toast" id="toast">готово ✌️</div>
 
 <script>
-  const MOOD_COLORS = { 1: '#ef4444', 2: '#f97316', 3: '#eab308', 4: '#22c55e', 5: '#8b5cf6' };
+  const MOOD_COLORS = { 1: '#e07060', 2: '#e8945a', 3: '#d4a84b', 4: '#7fb085', 5: '#b58ace' };
   const MOOD_LABELS = { 1: 'ужасно', 2: 'плохо', 3: 'нормально', 4: 'хорошо', 5: 'отлично' };
+  const MOOD_EMOJIS = { 1: '😡', 2: '😢', 3: '😐', 4: '😊', 5: '🤩' };
   const STORAGE_KEY = 'moodtracker';
+  const TAGS = ['работа', 'сон', 'еда', 'спорт', 'погода', 'люди', 'здоровье', 'творчество', 'финансы'];
 
   const QUOTES = [
-    'каждый день — это новая возможность',
-    'даже маленький шаг — это прогресс',
-    'твоё настроение — твой выбор',
-    'будь добрее к себе',
-    'ты уже справляешься лучше, чем думаешь',
-    'сегодня будет хороший день',
-    'сделай что-то, что сделает тебя счастливее',
-    'не забывай дышать',
-    'ты важен',
-    'даже в плохой день есть что-то хорошее',
-    'всё будет, но не сразу',
-    'главное — не останавливаться',
-    'позволь себе чувствовать',
-    'ты сильнее, чем кажется',
-    'каждая туча — с серебряной подкладкой',
-    'не сравнивай себя с другими',
-    'сегодня — отличный день, чтобы начать',
-    'будь собой',
-    'всё, что тебе нужно, уже есть внутри',
-    'ты заслуживаешь счастья',
-    'это тоже пройдёт',
-    'держи голову выше',
-    'маленькие победы — тоже победы',
-    'никогда не поздно',
-    'ты не один',
-    'сделай глубокий вдох',
-    'улыбнись, даже если не хочется',
-    'ты справишься',
-    'будь здесь и сейчас',
-    'всему своё время',
+    'каждый день — это новая возможность', 'даже маленький шаг — это прогресс',
+    'твоё настроение — твой выбор', 'будь добрее к себе',
+    'ты уже справляешься лучше, чем думаешь', 'сегодня будет хороший день',
+    'сделай что-то, что сделает тебя счастливее', 'не забывай дышать',
+    'ты важен', 'даже в плохой день есть что-то хорошее',
+    'всё будет, но не сразу', 'главное — не останавливаться',
+    'позволь себе чувствовать', 'ты сильнее, чем кажется',
+    'каждая туча — с серебряной подкладкой', 'не сравнивай себя с другими',
+    'сегодня — отличный день, чтобы начать', 'будь собой',
+    'всё, что тебе нужно, уже есть внутри', 'ты заслуживаешь счастья',
+    'это тоже пройдёт', 'держи голову выше',
+    'маленькие победы — тоже победы', 'никогда не поздно',
+    'ты не один', 'сделай глубокий вдох',
+    'улыбнись, даже если не хочется', 'ты справишься',
+    'будь здесь и сейчас', 'всему своё время',
   ];
 
-  function getDailyQuote() {
-    const today = new Date().toISOString().slice(0, 10);
-    const dayNum = parseInt(today.replace(/-/g, ''), 10);
-    return QUOTES[dayNum % QUOTES.length];
-  }
-
   let selectedMood = null;
+  let editingDate = null;
 
-  // init
   document.querySelectorAll('.mood-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('selected'));
@@ -390,28 +529,86 @@
   });
 
   document.getElementById('saveBtn').addEventListener('click', saveMood);
+  document.getElementById('cancelBtn').addEventListener('click', cancelEdit);
+
+  renderTags();
+
+  function renderTags() {
+    const row = document.getElementById('tagRow');
+    row.innerHTML = '';
+    TAGS.forEach(t => {
+      const btn = document.createElement('button');
+      btn.className = 'tag-btn';
+      btn.dataset.tag = t;
+      btn.textContent = t;
+      btn.addEventListener('click', () => btn.classList.toggle('active'));
+      row.appendChild(btn);
+    });
+  }
+
+  function getSelectedTags() {
+    return Array.from(document.querySelectorAll('.tag-btn.active')).map(b => b.dataset.tag);
+  }
+
+  function setSelectedTags(tags) {
+    document.querySelectorAll('.tag-btn').forEach(b => {
+      b.classList.toggle('active', tags.includes(b.dataset.tag));
+    });
+  }
 
   function saveMood() {
     if (!selectedMood) return;
     const note = document.getElementById('note').value.trim();
-    const today = new Date().toISOString().slice(0, 10);
+    const tags = getSelectedTags();
+    const date = editingDate || new Date().toISOString().slice(0, 10);
     const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-    data[today] = { mood: selectedMood, note };
+    data[date] = { mood: selectedMood, note, tags };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     showToast();
-    renderChart();
-    renderStats();
-    renderHistory();
-    // reset
-    document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('selected'));
+    cancelEdit();
+    renderAll();
+  }
+
+  function editEntry(date) {
+    const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    const entry = data[date];
+    if (!entry) return;
+    editingDate = date;
+    document.getElementById('editHint').textContent = 'редактируем ' + new Date(date + 'T12:00:00').toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
+    document.getElementById('editHint').style.display = 'block';
+    document.getElementById('cancelBtn').style.display = 'block';
+    document.getElementById('saveBtn').textContent = '✏️ обновить';
+    document.getElementById('note').value = entry.note || '';
+    setSelectedTags(entry.tags || []);
+    selectedMood = entry.mood;
+    document.querySelectorAll('.mood-btn').forEach(b => {
+      b.classList.toggle('selected', parseInt(b.dataset.mood) === entry.mood);
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function cancelEdit() {
+    editingDate = null;
+    document.getElementById('editHint').style.display = 'none';
+    document.getElementById('cancelBtn').style.display = 'none';
+    document.getElementById('saveBtn').textContent = '✌️ записать';
     document.getElementById('note').value = '';
+    setSelectedTags([]);
+    document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('selected'));
     selectedMood = null;
   }
 
-  function showToast() {
-    const toast = document.getElementById('toast');
-    toast.classList.add('show');
-    setTimeout(() => toast.classList.remove('show'), 2000);
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg || 'готово ✌️';
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2000);
+  }
+
+  function renderAll() {
+    renderChart();
+    renderStats();
+    renderHistory();
   }
 
   function renderChart() {
@@ -420,28 +617,25 @@
     const empty = document.getElementById('emptyState');
     chart.innerHTML = '';
 
-    const days = [];
     const now = new Date();
-    for (let i = 29; i >= 0; i--) {
+    const days = Array.from({ length: 30 }, (_, i) => {
       const d = new Date(now);
-      d.setDate(d.getDate() - i);
-      days.push(d.toISOString().slice(0, 10));
-    }
+      d.setDate(d.getDate() - (29 - i));
+      return d.toISOString().slice(0, 10);
+    });
 
     let hasData = false;
     for (const date of days) {
       const div = document.createElement('div');
       div.className = 'day';
-
       const entry = data[date];
       if (entry) {
         hasData = true;
-        const mood = entry.mood;
-        div.style.setProperty('--h', (mood * 10 + 10) + 'px');
-        div.style.background = MOOD_COLORS[mood];
-
-        const dayLabel = new Date(date).toLocaleDateString('ru-RU', { weekday: 'short', day: 'numeric', month: 'short' });
-        div.title = `${dayLabel} — ${MOOD_LABELS[mood]}${entry.note ? ': ' + entry.note : ''}`;
+        div.style.setProperty('--h', (entry.mood * 10 + 10) + 'px');
+        div.style.background = MOOD_COLORS[entry.mood];
+        div.title = new Date(date + 'T12:00:00').toLocaleDateString('ru-RU', { weekday: 'short', day: 'numeric', month: 'short' })
+          + ' — ' + MOOD_LABELS[entry.mood];
+        div.addEventListener('click', () => editEntry(date));
       } else {
         div.classList.add('empty');
       }
@@ -455,22 +649,18 @@
     const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
     const entries = Object.entries(data).sort((a, b) => a[0].localeCompare(b[0]));
     const stats = document.getElementById('stats');
-
     if (entries.length === 0) { stats.style.display = 'none'; return; }
     stats.style.display = 'block';
 
     const values = entries.map(([_, v]) => v.mood);
 
-    // avg 7 days
     const last7 = values.slice(-7);
     const avg7 = last7.reduce((a, b) => a + b, 0) / last7.length;
     document.getElementById('avg7').textContent = avg7.toFixed(1) + ' (' + MOOD_LABELS[Math.round(avg7)] + ')';
 
-    // avg all
     const avgAll = values.reduce((a, b) => a + b, 0) / values.length;
     document.getElementById('avgAll').textContent = avgAll.toFixed(1) + ' (' + MOOD_LABELS[Math.round(avgAll)] + ')';
 
-    // best day of week
     const dayScores = {};
     for (const [date, v] of entries) {
       const d = new Date(date + 'T12:00:00');
@@ -486,31 +676,24 @@
     }
     document.getElementById('bestDay').textContent = bestDayName;
 
-    // streak
-    let streak = 0;
     const todayStr = new Date().toISOString().slice(0, 10);
+    let streak = 0;
     for (let i = 0; ; i++) {
       const d = new Date();
       d.setDate(d.getDate() - i);
-      const key = d.toISOString().slice(0, 10);
-      if (data[key]) streak++; else break;
+      if (data[d.toISOString().slice(0, 10)]) streak++; else break;
     }
     document.getElementById('streak').textContent = streak;
 
-    // top mood
     const freq = {};
     for (const v of values) freq[v] = (freq[v] || 0) + 1;
     let topMood = 3, topCount = 0;
     for (const [m, c] of Object.entries(freq)) {
       if (c > topCount) { topCount = c; topMood = parseInt(m); }
     }
-    const topEmojis = { 1: '😡', 2: '😢', 3: '😐', 4: '😊', 5: '🤩' };
-    document.getElementById('topMood').textContent = topEmojis[topMood] + ' ' + MOOD_LABELS[topMood];
-
-    // total
+    document.getElementById('topMood').textContent = MOOD_EMOJIS[topMood] + ' ' + MOOD_LABELS[topMood];
     document.getElementById('totalCount').textContent = entries.length;
 
-    // distribution
     const distEl = document.getElementById('distribution');
     distEl.innerHTML = '';
     for (let m = 1; m <= 5; m++) {
@@ -520,8 +703,7 @@
       wrap.className = 'dist-bar-wrap';
       const emoji = document.createElement('div');
       emoji.className = 'dist-emoji';
-      const topEmojis = { 1: '😡', 2: '😢', 3: '😐', 4: '😊', 5: '🤩' };
-      emoji.textContent = topEmojis[m];
+      emoji.textContent = MOOD_EMOJIS[m];
       const bar = document.createElement('div');
       bar.className = 'dist-bar';
       bar.style.background = MOOD_COLORS[m];
@@ -534,6 +716,41 @@
       wrap.appendChild(countEl);
       distEl.appendChild(wrap);
     }
+
+    // week chart
+    const weekEl = document.getElementById('weekChart');
+    weekEl.innerHTML = '';
+    const now = new Date();
+    for (let w = 0; w < 8; w++) {
+      const weekStart = new Date(now);
+      weekStart.setDate(weekStart.getDate() - weekStart.getDay() - (7 * (7 - w)) + 1);
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekEnd.getDate() + 6);
+      const scores = [];
+      for (let d = new Date(weekStart); d <= weekEnd; d.setDate(d.getDate() + 1)) {
+        const key = d.toISOString().slice(0, 10);
+        if (data[key]) scores.push(data[key].mood);
+      }
+      const wrap = document.createElement('div');
+      wrap.className = 'week-bar-wrap';
+      const bar = document.createElement('div');
+      bar.className = 'week-bar';
+      if (scores.length) {
+        const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+        const colorIdx = Math.round(avg);
+        bar.style.background = MOOD_COLORS[colorIdx] || '#d4a84b';
+        bar.style.height = (avg * 8 + 8) + 'px';
+      } else {
+        bar.style.background = 'rgba(200, 160, 130, 0.12)';
+        bar.style.height = '6px';
+      }
+      const label = document.createElement('div');
+      label.className = 'week-label';
+      label.textContent = weekStart.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+      wrap.appendChild(bar);
+      wrap.appendChild(label);
+      weekEl.appendChild(wrap);
+    }
   }
 
   function renderHistory() {
@@ -541,12 +758,10 @@
     const entries = Object.entries(data).sort((a, b) => b[0].localeCompare(a[0])).slice(0, 20);
     const history = document.getElementById('history');
     const container = document.getElementById('entries');
-
     if (entries.length === 0) { history.style.display = 'none'; return; }
     history.style.display = 'block';
     container.innerHTML = '';
 
-    const emojis = { 1: '😡', 2: '😢', 3: '😐', 4: '😊', 5: '🤩' };
     for (const [date, entry] of entries) {
       const div = document.createElement('div');
       div.className = 'entry';
@@ -557,7 +772,7 @@
 
       const moodDiv = document.createElement('div');
       moodDiv.className = 'entry-mood';
-      moodDiv.textContent = emojis[entry.mood];
+      moodDiv.textContent = MOOD_EMOJIS[entry.mood];
 
       const labelDiv = document.createElement('div');
       labelDiv.className = 'entry-label';
@@ -567,21 +782,42 @@
       noteDiv.className = 'entry-note';
       noteDiv.textContent = entry.note || '—';
 
+      const tagsDiv = document.createElement('div');
+      tagsDiv.className = 'entry-tags';
+      if (entry.tags && entry.tags.length) {
+        entry.tags.forEach(t => {
+          const s = document.createElement('span');
+          s.className = 'entry-tag';
+          s.textContent = t;
+          tagsDiv.appendChild(s);
+        });
+      }
+
+      const editBtn = document.createElement('button');
+      editBtn.className = 'entry-edit';
+      editBtn.textContent = '✎';
+      editBtn.addEventListener('click', () => editEntry(date));
+
       const delBtn = document.createElement('button');
       delBtn.className = 'entry-del';
       delBtn.textContent = '✕';
-      delBtn.addEventListener('click', () => {
+      delBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
         delete data[date];
         localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-        renderChart();
-        renderStats();
-        renderHistory();
+        renderAll();
       });
+
+      const col = document.createElement('div');
+      col.className = 'entry-col';
+      col.appendChild(noteDiv);
+      col.appendChild(tagsDiv);
 
       div.appendChild(dateDiv);
       div.appendChild(moodDiv);
       div.appendChild(labelDiv);
-      div.appendChild(noteDiv);
+      div.appendChild(col);
+      div.appendChild(editBtn);
       div.appendChild(delBtn);
       container.appendChild(div);
     }
@@ -592,9 +828,35 @@
   }
 
   showDailyQuote();
-  renderChart();
-  renderStats();
-  renderHistory();
+  renderAll();
+  setupReminder();
+
+  function setupReminder() {
+    const cb = document.getElementById('reminderCheck');
+    cb.checked = localStorage.getItem('reminder') === 'on';
+    cb.addEventListener('change', () => {
+      localStorage.setItem('reminder', cb.checked ? 'on' : 'off');
+      if (cb.checked) askNotification();
+    });
+    if (cb.checked) askNotification();
+    setInterval(checkReminder, 3600000);
+    checkReminder();
+  }
+
+  function askNotification() {
+    if (!('Notification' in window)) return;
+    if (Notification.permission === 'default') Notification.requestPermission();
+  }
+
+  function checkReminder() {
+    if (localStorage.getItem('reminder') !== 'on') return;
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    const today = new Date().toISOString().slice(0, 10);
+    const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    if (!data[today]) {
+      new Notification('как дела?', { body: 'ты ещё не отмечал настроение сегодня', silent: true });
+    }
+  }
 </script>
 </body>
 </html>
