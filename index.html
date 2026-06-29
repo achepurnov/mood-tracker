@@ -410,6 +410,59 @@
     font-size: 13px;
     color: rgba(80, 60, 45, 0.45);
   }
+  .peek-row {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(200, 160, 130, 0.12);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+  .peek-myid {
+    font-size: 12px;
+    color: rgba(80, 60, 45, 0.35);
+  }
+  .peek-myid span {
+    font-family: monospace;
+    color: rgba(80, 60, 45, 0.55);
+  }
+  .peek-form {
+    display: flex;
+    gap: 6px;
+    flex: 1;
+    min-width: 160px;
+  }
+  .peek-input {
+    flex: 1;
+    background: rgba(240, 215, 190, 0.2);
+    border: 1px solid rgba(200, 160, 130, 0.2);
+    border-radius: 10px;
+    padding: 8px 12px;
+    font-size: 13px;
+    color: #3d2c2c;
+    font-family: monospace;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .peek-input:focus { border-color: rgba(180, 140, 110, 0.4); }
+  .peek-btn {
+    padding: 8px 14px;
+    border: none;
+    border-radius: 10px;
+    background: #3d2c2c;
+    color: #faf0e8;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .peek-btn:hover { background: #4d3838; }
+  .peek-hint {
+    font-size: 12px;
+    color: rgba(180, 140, 110, 0.6);
+    width: 100%;
+    text-align: center;
+  }
 </style>
 </head>
 <body>
@@ -488,375 +541,432 @@
     </label>
     <span class="reminder-label">напоминать, если не отмечал</span>
   </div>
+
+  <div class="peek-row">
+    <div class="peek-myid">мой id: <span id="myId">...</span></div>
+    <div class="peek-form">
+      <input class="peek-input" id="peekInput" placeholder="чужой id">
+      <button class="peek-btn" id="peekBtn">👀</button>
+    </div>
+    <div class="peek-hint" id="peekHint"></div>
+  </div>
 </div>
 
 <div class="saved-toast" id="toast">готово ✌️</div>
 
-<script>
-  const MOOD_COLORS = { 1: '#e07060', 2: '#e8945a', 3: '#d4a84b', 4: '#7fb085', 5: '#b58ace' };
-  const MOOD_LABELS = { 1: 'ужасно', 2: 'плохо', 3: 'нормально', 4: 'хорошо', 5: 'отлично' };
-  const MOOD_EMOJIS = { 1: '😡', 2: '😢', 3: '😐', 4: '😊', 5: '🤩' };
-  const STORAGE_KEY = 'moodtracker';
-  const TAGS = ['работа', 'сон', 'еда', 'спорт', 'погода', 'люди', 'здоровье', 'творчество', 'финансы'];
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js';
+import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js';
+import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, getDocs, query, orderBy } from 'https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js';
 
-  const QUOTES = [
-    'каждый день — это новая возможность', 'даже маленький шаг — это прогресс',
-    'твоё настроение — твой выбор', 'будь добрее к себе',
-    'ты уже справляешься лучше, чем думаешь', 'сегодня будет хороший день',
-    'сделай что-то, что сделает тебя счастливее', 'не забывай дышать',
-    'ты важен', 'даже в плохой день есть что-то хорошее',
-    'всё будет, но не сразу', 'главное — не останавливаться',
-    'позволь себе чувствовать', 'ты сильнее, чем кажется',
-    'каждая туча — с серебряной подкладкой', 'не сравнивай себя с другими',
-    'сегодня — отличный день, чтобы начать', 'будь собой',
-    'всё, что тебе нужно, уже есть внутри', 'ты заслуживаешь счастья',
-    'это тоже пройдёт', 'держи голову выше',
-    'маленькие победы — тоже победы', 'никогда не поздно',
-    'ты не один', 'сделай глубокий вдох',
-    'улыбнись, даже если не хочется', 'ты справишься',
-    'будь здесь и сейчас', 'всему своё время',
-  ];
+const firebaseConfig = {
+  apiKey: "AIzaSyCOLukfoheoXyGMXC2-aGbhNZX491-maI4",
+  authDomain: "mood-tracker-c18f6.firebaseapp.com",
+  projectId: "mood-tracker-c18f6",
+  storageBucket: "mood-tracker-c18f6.firebasestorage.app",
+  messagingSenderId: "632017021291",
+  appId: "1:632017021291:web:835c1fe076da9ac6e9442e",
+  measurementId: "G-FFHWPY2F9T"
+};
 
-  let selectedMood = null;
-  let editingDate = null;
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
-  document.querySelectorAll('.mood-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('selected'));
-      btn.classList.add('selected');
-      selectedMood = parseInt(btn.dataset.mood);
-    });
+const MOOD_COLORS = { 1: '#e07060', 2: '#e8945a', 3: '#d4a84b', 4: '#7fb085', 5: '#b58ace' };
+const MOOD_LABELS = { 1: 'ужасно', 2: 'плохо', 3: 'нормально', 4: 'хорошо', 5: 'отлично' };
+const MOOD_EMOJIS = { 1: '😡', 2: '😢', 3: '😐', 4: '😊', 5: '🤩' };
+const TAGS = ['работа', 'сон', 'еда', 'спорт', 'погода', 'люди', 'здоровье', 'творчество', 'финансы'];
+
+const QUOTES = [
+  'каждый день — это новая возможность', 'даже маленький шаг — это прогресс',
+  'твоё настроение — твой выбор', 'будь добрее к себе',
+  'ты уже справляешься лучше, чем думаешь', 'сегодня будет хороший день',
+  'сделай что-то, что сделает тебя счастливее', 'не забывай дышать',
+  'ты важен', 'даже в плохой день есть что-то хорошее',
+  'всё будет, но не сразу', 'главное — не останавливаться',
+  'позволь себе чувствовать', 'ты сильнее, чем кажется',
+  'каждая туча — с серебряной подкладкой', 'не сравнивай себя с другими',
+  'сегодня — отличный день, чтобы начать', 'будь собой',
+  'всё, что тебе нужно, уже есть внутри', 'ты заслуживаешь счастья',
+  'это тоже пройдёт', 'держи голову выше',
+  'маленькие победы — тоже победы', 'никогда не поздно',
+  'ты не один', 'сделай глубокий вдох',
+  'улыбнись, даже если не хочется', 'ты справишься',
+  'будь здесь и сейчас', 'всему своё время',
+];
+
+let selectedMood = null;
+let editingDate = null;
+let currentUserUid = null;
+let viewingUid = null;
+let cachedData = {};
+
+document.querySelectorAll('.mood-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    selectedMood = parseInt(btn.dataset.mood);
+  });
+});
+
+document.getElementById('saveBtn').addEventListener('click', saveMood);
+document.getElementById('cancelBtn').addEventListener('click', cancelEdit);
+document.getElementById('peekBtn').addEventListener('click', peekUser);
+
+renderTags();
+showDailyQuote();
+setupReminder();
+
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    currentUserUid = user.uid;
+    viewingUid = currentUserUid;
+    document.getElementById('myId').textContent = user.uid.slice(0, 8) + '…';
+    await loadData();
+  } else {
+    await signInAnonymously(auth);
+  }
+});
+
+async function loadData() {
+  if (!viewingUid) return;
+  const snap = await getDocs(collection(db, 'users', viewingUid, 'entries'));
+  cachedData = {};
+  snap.forEach(d => { cachedData[d.id] = d.data(); });
+  document.getElementById('peekHint').textContent = viewingUid === currentUserUid ? '' : '👀 смотришь чужие записи';
+  renderAll();
+}
+
+function getDataRef(date) {
+  return doc(db, 'users', viewingUid, 'entries', date);
+}
+
+function renderTags() {
+  const row = document.getElementById('tagRow');
+  row.innerHTML = '';
+  TAGS.forEach(t => {
+    const btn = document.createElement('button');
+    btn.className = 'tag-btn';
+    btn.dataset.tag = t;
+    btn.textContent = t;
+    btn.addEventListener('click', () => btn.classList.toggle('active'));
+    row.appendChild(btn);
+  });
+}
+
+function getSelectedTags() {
+  return Array.from(document.querySelectorAll('.tag-btn.active')).map(b => b.dataset.tag);
+}
+
+function setSelectedTags(tags) {
+  document.querySelectorAll('.tag-btn').forEach(b => {
+    b.classList.toggle('active', tags.includes(b.dataset.tag));
+  });
+}
+
+async function saveMood() {
+  if (!selectedMood || !viewingUid) return;
+  if (viewingUid !== currentUserUid) { showToast('нельзя редактировать чужие записи'); return; }
+  const note = document.getElementById('note').value.trim();
+  const tags = getSelectedTags();
+  const date = editingDate || new Date().toISOString().slice(0, 10);
+  await setDoc(getDataRef(date), { mood: selectedMood, note, tags, createdAt: new Date() });
+  showToast();
+  cancelEdit();
+  await loadData();
+}
+
+function editEntry(date) {
+  if (viewingUid !== currentUserUid) return;
+  const entry = cachedData[date];
+  if (!entry) return;
+  editingDate = date;
+  document.getElementById('editHint').textContent = 'редактируем ' + new Date(date + 'T12:00:00').toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
+  document.getElementById('editHint').style.display = 'block';
+  document.getElementById('cancelBtn').style.display = 'block';
+  document.getElementById('saveBtn').textContent = '✏️ обновить';
+  document.getElementById('note').value = entry.note || '';
+  setSelectedTags(entry.tags || []);
+  selectedMood = entry.mood;
+  document.querySelectorAll('.mood-btn').forEach(b => {
+    b.classList.toggle('selected', parseInt(b.dataset.mood) === entry.mood);
+  });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function cancelEdit() {
+  editingDate = null;
+  document.getElementById('editHint').style.display = 'none';
+  document.getElementById('cancelBtn').style.display = 'none';
+  document.getElementById('saveBtn').textContent = '✌️ записать';
+  document.getElementById('note').value = '';
+  setSelectedTags([]);
+  document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('selected'));
+  selectedMood = null;
+}
+
+async function deleteEntry(date) {
+  if (viewingUid !== currentUserUid) return;
+  await deleteDoc(getDataRef(date));
+  await loadData();
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg || 'готово ✌️';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+function renderAll() {
+  renderChart();
+  renderStats();
+  renderHistory();
+}
+
+function renderChart() {
+  const chart = document.getElementById('chart');
+  const empty = document.getElementById('emptyState');
+  chart.innerHTML = '';
+
+  const now = new Date();
+  const days = Array.from({ length: 30 }, (_, i) => {
+    const d = new Date(now);
+    d.setDate(d.getDate() - (29 - i));
+    return d.toISOString().slice(0, 10);
   });
 
-  document.getElementById('saveBtn').addEventListener('click', saveMood);
-  document.getElementById('cancelBtn').addEventListener('click', cancelEdit);
+  let hasData = false;
+  for (const date of days) {
+    const div = document.createElement('div');
+    div.className = 'day';
+    const entry = cachedData[date];
+    if (entry) {
+      hasData = true;
+      div.style.setProperty('--h', (entry.mood * 10 + 10) + 'px');
+      div.style.background = MOOD_COLORS[entry.mood];
+      div.title = new Date(date + 'T12:00:00').toLocaleDateString('ru-RU', { weekday: 'short', day: 'numeric', month: 'short' })
+        + ' — ' + MOOD_LABELS[entry.mood];
+      if (viewingUid === currentUserUid) div.addEventListener('click', () => editEntry(date));
+    } else {
+      div.classList.add('empty');
+    }
+    chart.appendChild(div);
+  }
+  empty.style.display = hasData ? 'none' : 'block';
+}
 
-  renderTags();
+function renderStats() {
+  const entries = Object.entries(cachedData).sort((a, b) => a[0].localeCompare(b[0]));
+  const stats = document.getElementById('stats');
+  if (entries.length === 0) { stats.style.display = 'none'; return; }
+  stats.style.display = 'block';
 
-  function renderTags() {
-    const row = document.getElementById('tagRow');
-    row.innerHTML = '';
-    TAGS.forEach(t => {
-      const btn = document.createElement('button');
-      btn.className = 'tag-btn';
-      btn.dataset.tag = t;
-      btn.textContent = t;
-      btn.addEventListener('click', () => btn.classList.toggle('active'));
-      row.appendChild(btn);
-    });
+  const values = entries.map(([_, v]) => v.mood);
+
+  const last7 = values.slice(-7);
+  const avg7 = last7.length ? last7.reduce((a, b) => a + b, 0) / last7.length : 0;
+  document.getElementById('avg7').textContent = avg7 ? avg7.toFixed(1) + ' (' + MOOD_LABELS[Math.round(avg7)] + ')' : '—';
+
+  const avgAll = values.reduce((a, b) => a + b, 0) / values.length;
+  document.getElementById('avgAll').textContent = avgAll.toFixed(1) + ' (' + MOOD_LABELS[Math.round(avgAll)] + ')';
+
+  const dayScores = {};
+  for (const [date, v] of entries) {
+    const d = new Date(date + 'T12:00:00');
+    const day = d.toLocaleDateString('ru-RU', { weekday: 'long' });
+    if (!dayScores[day]) dayScores[day] = { sum: 0, count: 0 };
+    dayScores[day].sum += v.mood;
+    dayScores[day].count++;
+  }
+  let bestDayName = '—', bestDayAvg = 0;
+  for (const [day, s] of Object.entries(dayScores)) {
+    const avg = s.sum / s.count;
+    if (avg > bestDayAvg) { bestDayAvg = avg; bestDayName = day; }
+  }
+  document.getElementById('bestDay').textContent = bestDayName;
+
+  let streak = 0;
+  for (let i = 0; ; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    if (cachedData[d.toISOString().slice(0, 10)]) streak++; else break;
+  }
+  document.getElementById('streak').textContent = streak;
+
+  const freq = {};
+  for (const v of values) freq[v] = (freq[v] || 0) + 1;
+  let topMood = 3, topCount = 0;
+  for (const [m, c] of Object.entries(freq)) {
+    if (c > topCount) { topCount = c; topMood = parseInt(m); }
+  }
+  document.getElementById('topMood').textContent = MOOD_EMOJIS[topMood] + ' ' + MOOD_LABELS[topMood];
+  document.getElementById('totalCount').textContent = entries.length;
+
+  const distEl = document.getElementById('distribution');
+  distEl.innerHTML = '';
+  for (let m = 1; m <= 5; m++) {
+    const count = freq[m] || 0;
+    const pct = entries.length ? (count / entries.length * 100) : 0;
+    const wrap = document.createElement('div');
+    wrap.className = 'dist-bar-wrap';
+    const emoji = document.createElement('div');
+    emoji.className = 'dist-emoji';
+    emoji.textContent = MOOD_EMOJIS[m];
+    const bar = document.createElement('div');
+    bar.className = 'dist-bar';
+    bar.style.background = MOOD_COLORS[m];
+    bar.style.height = Math.max(4, pct * 1.5) + 'px';
+    const countEl = document.createElement('div');
+    countEl.className = 'dist-count';
+    countEl.textContent = count;
+    wrap.appendChild(emoji);
+    wrap.appendChild(bar);
+    wrap.appendChild(countEl);
+    distEl.appendChild(wrap);
   }
 
-  function getSelectedTags() {
-    return Array.from(document.querySelectorAll('.tag-btn.active')).map(b => b.dataset.tag);
+  const weekEl = document.getElementById('weekChart');
+  weekEl.innerHTML = '';
+  const now = new Date();
+  for (let w = 0; w < 8; w++) {
+    const weekStart = new Date(now);
+    weekStart.setDate(weekStart.getDate() - weekStart.getDay() - (7 * (7 - w)) + 1);
+    const scores = [];
+    for (let d = new Date(weekStart), end = new Date(weekStart); d <= new Date(end.setDate(end.getDate() + 6)); d.setDate(d.getDate() + 1)) {
+      const key = d.toISOString().slice(0, 10);
+      if (cachedData[key]) scores.push(cachedData[key].mood);
+    }
+    const wrap = document.createElement('div');
+    wrap.className = 'week-bar-wrap';
+    const bar = document.createElement('div');
+    bar.className = 'week-bar';
+    if (scores.length) {
+      const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+      const colorIdx = Math.round(avg);
+      bar.style.background = MOOD_COLORS[colorIdx] || '#d4a84b';
+      bar.style.height = (avg * 8 + 8) + 'px';
+    } else {
+      bar.style.background = 'rgba(200, 160, 130, 0.12)';
+      bar.style.height = '6px';
+    }
+    const label = document.createElement('div');
+    label.className = 'week-label';
+    label.textContent = weekStart.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+    wrap.appendChild(bar);
+    wrap.appendChild(label);
+    weekEl.appendChild(wrap);
   }
+}
 
-  function setSelectedTags(tags) {
-    document.querySelectorAll('.tag-btn').forEach(b => {
-      b.classList.toggle('active', tags.includes(b.dataset.tag));
-    });
-  }
+function renderHistory() {
+  const entries = Object.entries(cachedData).sort((a, b) => b[0].localeCompare(a[0])).slice(0, 20);
+  const history = document.getElementById('history');
+  const container = document.getElementById('entries');
+  if (entries.length === 0) { history.style.display = 'none'; return; }
+  history.style.display = 'block';
+  container.innerHTML = '';
 
-  function saveMood() {
-    if (!selectedMood) return;
-    const note = document.getElementById('note').value.trim();
-    const tags = getSelectedTags();
-    const date = editingDate || new Date().toISOString().slice(0, 10);
-    const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-    data[date] = { mood: selectedMood, note, tags };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    showToast();
-    cancelEdit();
-    renderAll();
-  }
+  for (const [date, entry] of entries) {
+    const div = document.createElement('div');
+    div.className = 'entry';
 
-  function editEntry(date) {
-    const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-    const entry = data[date];
-    if (!entry) return;
-    editingDate = date;
-    document.getElementById('editHint').textContent = 'редактируем ' + new Date(date + 'T12:00:00').toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
-    document.getElementById('editHint').style.display = 'block';
-    document.getElementById('cancelBtn').style.display = 'block';
-    document.getElementById('saveBtn').textContent = '✏️ обновить';
-    document.getElementById('note').value = entry.note || '';
-    setSelectedTags(entry.tags || []);
-    selectedMood = entry.mood;
-    document.querySelectorAll('.mood-btn').forEach(b => {
-      b.classList.toggle('selected', parseInt(b.dataset.mood) === entry.mood);
-    });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
+    const dateDiv = document.createElement('div');
+    dateDiv.className = 'entry-date';
+    dateDiv.textContent = new Date(date + 'T12:00:00').toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
 
-  function cancelEdit() {
-    editingDate = null;
-    document.getElementById('editHint').style.display = 'none';
-    document.getElementById('cancelBtn').style.display = 'none';
-    document.getElementById('saveBtn').textContent = '✌️ записать';
-    document.getElementById('note').value = '';
-    setSelectedTags([]);
-    document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('selected'));
-    selectedMood = null;
-  }
+    const moodDiv = document.createElement('div');
+    moodDiv.className = 'entry-mood';
+    moodDiv.textContent = MOOD_EMOJIS[entry.mood];
 
-  function showToast(msg) {
-    const t = document.getElementById('toast');
-    t.textContent = msg || 'готово ✌️';
-    t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 2000);
-  }
+    const labelDiv = document.createElement('div');
+    labelDiv.className = 'entry-label';
+    labelDiv.textContent = MOOD_LABELS[entry.mood];
 
-  function renderAll() {
-    renderChart();
-    renderStats();
-    renderHistory();
-  }
+    const noteDiv = document.createElement('div');
+    noteDiv.className = 'entry-note';
+    noteDiv.textContent = entry.note || '—';
 
-  function renderChart() {
-    const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-    const chart = document.getElementById('chart');
-    const empty = document.getElementById('emptyState');
-    chart.innerHTML = '';
-
-    const now = new Date();
-    const days = Array.from({ length: 30 }, (_, i) => {
-      const d = new Date(now);
-      d.setDate(d.getDate() - (29 - i));
-      return d.toISOString().slice(0, 10);
-    });
-
-    let hasData = false;
-    for (const date of days) {
-      const div = document.createElement('div');
-      div.className = 'day';
-      const entry = data[date];
-      if (entry) {
-        hasData = true;
-        div.style.setProperty('--h', (entry.mood * 10 + 10) + 'px');
-        div.style.background = MOOD_COLORS[entry.mood];
-        div.title = new Date(date + 'T12:00:00').toLocaleDateString('ru-RU', { weekday: 'short', day: 'numeric', month: 'short' })
-          + ' — ' + MOOD_LABELS[entry.mood];
-        div.addEventListener('click', () => editEntry(date));
-      } else {
-        div.classList.add('empty');
-      }
-      chart.appendChild(div);
+    const tagsDiv = document.createElement('div');
+    tagsDiv.className = 'entry-tags';
+    if (entry.tags && entry.tags.length) {
+      entry.tags.forEach(t => {
+        const s = document.createElement('span');
+        s.className = 'entry-tag';
+        s.textContent = t;
+        tagsDiv.appendChild(s);
+      });
     }
 
-    empty.style.display = hasData ? 'none' : 'block';
-  }
+    const col = document.createElement('div');
+    col.className = 'entry-col';
+    col.appendChild(noteDiv);
+    col.appendChild(tagsDiv);
+    div.appendChild(dateDiv);
+    div.appendChild(moodDiv);
+    div.appendChild(labelDiv);
+    div.appendChild(col);
 
-  function renderStats() {
-    const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-    const entries = Object.entries(data).sort((a, b) => a[0].localeCompare(b[0]));
-    const stats = document.getElementById('stats');
-    if (entries.length === 0) { stats.style.display = 'none'; return; }
-    stats.style.display = 'block';
-
-    const values = entries.map(([_, v]) => v.mood);
-
-    const last7 = values.slice(-7);
-    const avg7 = last7.reduce((a, b) => a + b, 0) / last7.length;
-    document.getElementById('avg7').textContent = avg7.toFixed(1) + ' (' + MOOD_LABELS[Math.round(avg7)] + ')';
-
-    const avgAll = values.reduce((a, b) => a + b, 0) / values.length;
-    document.getElementById('avgAll').textContent = avgAll.toFixed(1) + ' (' + MOOD_LABELS[Math.round(avgAll)] + ')';
-
-    const dayScores = {};
-    for (const [date, v] of entries) {
-      const d = new Date(date + 'T12:00:00');
-      const day = d.toLocaleDateString('ru-RU', { weekday: 'long' });
-      if (!dayScores[day]) dayScores[day] = { sum: 0, count: 0 };
-      dayScores[day].sum += v.mood;
-      dayScores[day].count++;
-    }
-    let bestDayName = '—', bestDayAvg = 0;
-    for (const [day, s] of Object.entries(dayScores)) {
-      const avg = s.sum / s.count;
-      if (avg > bestDayAvg) { bestDayAvg = avg; bestDayName = day; }
-    }
-    document.getElementById('bestDay').textContent = bestDayName;
-
-    const todayStr = new Date().toISOString().slice(0, 10);
-    let streak = 0;
-    for (let i = 0; ; i++) {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      if (data[d.toISOString().slice(0, 10)]) streak++; else break;
-    }
-    document.getElementById('streak').textContent = streak;
-
-    const freq = {};
-    for (const v of values) freq[v] = (freq[v] || 0) + 1;
-    let topMood = 3, topCount = 0;
-    for (const [m, c] of Object.entries(freq)) {
-      if (c > topCount) { topCount = c; topMood = parseInt(m); }
-    }
-    document.getElementById('topMood').textContent = MOOD_EMOJIS[topMood] + ' ' + MOOD_LABELS[topMood];
-    document.getElementById('totalCount').textContent = entries.length;
-
-    const distEl = document.getElementById('distribution');
-    distEl.innerHTML = '';
-    for (let m = 1; m <= 5; m++) {
-      const count = freq[m] || 0;
-      const pct = entries.length ? (count / entries.length * 100) : 0;
-      const wrap = document.createElement('div');
-      wrap.className = 'dist-bar-wrap';
-      const emoji = document.createElement('div');
-      emoji.className = 'dist-emoji';
-      emoji.textContent = MOOD_EMOJIS[m];
-      const bar = document.createElement('div');
-      bar.className = 'dist-bar';
-      bar.style.background = MOOD_COLORS[m];
-      bar.style.height = Math.max(4, pct * 1.5) + 'px';
-      const countEl = document.createElement('div');
-      countEl.className = 'dist-count';
-      countEl.textContent = count;
-      wrap.appendChild(emoji);
-      wrap.appendChild(bar);
-      wrap.appendChild(countEl);
-      distEl.appendChild(wrap);
-    }
-
-    // week chart
-    const weekEl = document.getElementById('weekChart');
-    weekEl.innerHTML = '';
-    const now = new Date();
-    for (let w = 0; w < 8; w++) {
-      const weekStart = new Date(now);
-      weekStart.setDate(weekStart.getDate() - weekStart.getDay() - (7 * (7 - w)) + 1);
-      const weekEnd = new Date(weekStart);
-      weekEnd.setDate(weekEnd.getDate() + 6);
-      const scores = [];
-      for (let d = new Date(weekStart); d <= weekEnd; d.setDate(d.getDate() + 1)) {
-        const key = d.toISOString().slice(0, 10);
-        if (data[key]) scores.push(data[key].mood);
-      }
-      const wrap = document.createElement('div');
-      wrap.className = 'week-bar-wrap';
-      const bar = document.createElement('div');
-      bar.className = 'week-bar';
-      if (scores.length) {
-        const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
-        const colorIdx = Math.round(avg);
-        bar.style.background = MOOD_COLORS[colorIdx] || '#d4a84b';
-        bar.style.height = (avg * 8 + 8) + 'px';
-      } else {
-        bar.style.background = 'rgba(200, 160, 130, 0.12)';
-        bar.style.height = '6px';
-      }
-      const label = document.createElement('div');
-      label.className = 'week-label';
-      label.textContent = weekStart.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
-      wrap.appendChild(bar);
-      wrap.appendChild(label);
-      weekEl.appendChild(wrap);
-    }
-  }
-
-  function renderHistory() {
-    const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-    const entries = Object.entries(data).sort((a, b) => b[0].localeCompare(a[0])).slice(0, 20);
-    const history = document.getElementById('history');
-    const container = document.getElementById('entries');
-    if (entries.length === 0) { history.style.display = 'none'; return; }
-    history.style.display = 'block';
-    container.innerHTML = '';
-
-    for (const [date, entry] of entries) {
-      const div = document.createElement('div');
-      div.className = 'entry';
-
-      const dateDiv = document.createElement('div');
-      dateDiv.className = 'entry-date';
-      dateDiv.textContent = new Date(date + 'T12:00:00').toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
-
-      const moodDiv = document.createElement('div');
-      moodDiv.className = 'entry-mood';
-      moodDiv.textContent = MOOD_EMOJIS[entry.mood];
-
-      const labelDiv = document.createElement('div');
-      labelDiv.className = 'entry-label';
-      labelDiv.textContent = MOOD_LABELS[entry.mood];
-
-      const noteDiv = document.createElement('div');
-      noteDiv.className = 'entry-note';
-      noteDiv.textContent = entry.note || '—';
-
-      const tagsDiv = document.createElement('div');
-      tagsDiv.className = 'entry-tags';
-      if (entry.tags && entry.tags.length) {
-        entry.tags.forEach(t => {
-          const s = document.createElement('span');
-          s.className = 'entry-tag';
-          s.textContent = t;
-          tagsDiv.appendChild(s);
-        });
-      }
-
+    if (viewingUid === currentUserUid) {
       const editBtn = document.createElement('button');
       editBtn.className = 'entry-edit';
       editBtn.textContent = '✎';
       editBtn.addEventListener('click', () => editEntry(date));
-
       const delBtn = document.createElement('button');
       delBtn.className = 'entry-del';
       delBtn.textContent = '✕';
-      delBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        delete data[date];
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-        renderAll();
-      });
-
-      const col = document.createElement('div');
-      col.className = 'entry-col';
-      col.appendChild(noteDiv);
-      col.appendChild(tagsDiv);
-
-      div.appendChild(dateDiv);
-      div.appendChild(moodDiv);
-      div.appendChild(labelDiv);
-      div.appendChild(col);
+      delBtn.addEventListener('click', (e) => { e.stopPropagation(); deleteEntry(date); });
       div.appendChild(editBtn);
       div.appendChild(delBtn);
-      container.appendChild(div);
     }
+
+    container.appendChild(div);
   }
+}
 
-  function showDailyQuote() {
-    document.getElementById('quote').textContent = getDailyQuote();
-  }
+async function peekUser() {
+  const input = document.getElementById('peekInput').value.trim();
+  if (!input) return;
+  viewingUid = input;
+  document.getElementById('peekInput').value = '';
+  await loadData();
+}
 
-  showDailyQuote();
-  renderAll();
-  setupReminder();
+function showDailyQuote() {
+  document.getElementById('quote').textContent = getDailyQuote();
+}
 
-  function setupReminder() {
-    const cb = document.getElementById('reminderCheck');
-    cb.checked = localStorage.getItem('reminder') === 'on';
-    cb.addEventListener('change', () => {
-      localStorage.setItem('reminder', cb.checked ? 'on' : 'off');
-      if (cb.checked) askNotification();
-    });
+function getDailyQuote() {
+  const today = new Date().toISOString().slice(0, 10);
+  return QUOTES[parseInt(today.replace(/-/g, ''), 10) % QUOTES.length];
+}
+
+function setupReminder() {
+  const cb = document.getElementById('reminderCheck');
+  cb.checked = localStorage.getItem('reminder') === 'on';
+  cb.addEventListener('change', () => {
+    localStorage.setItem('reminder', cb.checked ? 'on' : 'off');
     if (cb.checked) askNotification();
-    setInterval(checkReminder, 3600000);
-    checkReminder();
-  }
+  });
+  if (cb.checked) askNotification();
+  setInterval(checkReminder, 3600000);
+  checkReminder();
+}
 
-  function askNotification() {
-    if (!('Notification' in window)) return;
-    if (Notification.permission === 'default') Notification.requestPermission();
-  }
+function askNotification() {
+  if (!('Notification' in window)) return;
+  if (Notification.permission === 'default') Notification.requestPermission();
+}
 
-  function checkReminder() {
-    if (localStorage.getItem('reminder') !== 'on') return;
-    if (!('Notification' in window) || Notification.permission !== 'granted') return;
-    const today = new Date().toISOString().slice(0, 10);
-    const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-    if (!data[today]) {
-      new Notification('как дела?', { body: 'ты ещё не отмечал настроение сегодня', silent: true });
-    }
+function checkReminder() {
+  if (localStorage.getItem('reminder') !== 'on') return;
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  const today = new Date().toISOString().slice(0, 10);
+  if (!cachedData[today]) {
+    new Notification('как дела?', { body: 'ты ещё не отмечал настроение сегодня', silent: true });
   }
+}
 </script>
 </body>
 </html>
